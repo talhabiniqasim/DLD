@@ -98,6 +98,24 @@ const CircuitNodeComponent: React.FC<NodeProps<CircuitNodeType>> = ({ id, data, 
           </div>
         );
       }
+      case 'fan-output': {
+        const inValue = data.signalValues?.['IN'] ?? false;
+        return (
+          <div className={`node-fan ${inValue ? 'spinning' : ''}`}>
+            <svg viewBox="0 0 40 40" width="40" height="40">
+              {/* Fan blades */}
+              <g className="fan-blades">
+                <path d="M20 20 C20 12, 28 8, 20 2 C12 8, 20 12, 20 20" fill={inValue ? '#60a5fa' : '#4b5563'} />
+                <path d="M20 20 C28 20, 32 28, 38 20 C32 12, 28 20, 20 20" fill={inValue ? '#60a5fa' : '#4b5563'} />
+                <path d="M20 20 C20 28, 12 32, 20 38 C28 32, 20 28, 20 20" fill={inValue ? '#60a5fa' : '#4b5563'} />
+                <path d="M20 20 C12 20, 8 12, 2 20 C8 28, 12 20, 20 20" fill={inValue ? '#60a5fa' : '#4b5563'} />
+              </g>
+              {/* Center hub */}
+              <circle cx="20" cy="20" r="4" fill={inValue ? '#93c5fd' : '#6b7280'} stroke={inValue ? '#60a5fa' : '#4b5563'} strokeWidth="1.5" />
+            </svg>
+          </div>
+        );
+      }
       default:
         return null;
     }
@@ -122,15 +140,19 @@ const CircuitNodeComponent: React.FC<NodeProps<CircuitNodeType>> = ({ id, data, 
         const signalHigh = data.signalValues?.[pin.id] ?? false;
 
         return (
-          <Handle
-            key={pin.id}
-            type="target"
-            position={Position.Left}
-            id={pin.id}
-            style={{ top: `${topPercent}%` }}
-            className={signalHigh ? 'signal-high' : 'signal-low'}
-            title={pin.label}
-          />
+          <React.Fragment key={pin.id}>
+            <Handle
+              type="target"
+              position={Position.Left}
+              id={pin.id}
+              style={{ top: `${topPercent}%` }}
+              className={signalHigh ? 'signal-high' : 'signal-low'}
+              title={pin.label}
+            />
+            <span className="pin-label pin-label-left" style={{ top: `${topPercent}%` }}>
+              {pin.label}
+            </span>
+          </React.Fragment>
         );
       })}
 
@@ -142,15 +164,19 @@ const CircuitNodeComponent: React.FC<NodeProps<CircuitNodeType>> = ({ id, data, 
         const signalHigh = data.signalValues?.[pin.id] ?? false;
 
         return (
-          <Handle
-            key={pin.id}
-            type="source"
-            position={Position.Right}
-            id={pin.id}
-            style={{ top: `${topPercent}%` }}
-            className={signalHigh ? 'signal-high' : 'signal-low'}
-            title={pin.label}
-          />
+          <React.Fragment key={pin.id}>
+            <Handle
+              type="source"
+              position={Position.Right}
+              id={pin.id}
+              style={{ top: `${topPercent}%` }}
+              className={signalHigh ? 'signal-high' : 'signal-low'}
+              title={pin.label}
+            />
+            <span className="pin-label pin-label-right" style={{ top: `${topPercent}%` }}>
+              {pin.label}
+            </span>
+          </React.Fragment>
         );
       })}
     </div>

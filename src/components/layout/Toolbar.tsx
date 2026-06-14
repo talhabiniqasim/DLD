@@ -1,20 +1,21 @@
 import React from 'react';
 import {
-  Undo2, Redo2, Trash2, Download, Upload, LayoutTemplate, Info,
+  Undo2, Redo2, Trash2, Download, Upload, LayoutTemplate, Info, Layout,
   PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen,
   PanelBottomClose, PanelBottomOpen, Play, Pause, RotateCcw,
+  Zap,
 } from 'lucide-react';
 import { useCircuitStore } from '@/store/circuitStore';
 import { useUIStore } from '@/store/uiStore';
 
 const Toolbar: React.FC = () => {
-  const { undo, redo, clearCircuit, past, future, saveToLocalStorage } = useCircuitStore();
+  const { undo, redo, clearCircuit, past, future, nodes, edges, saveToLocalStorage } = useCircuitStore();
   const {
     sidebarOpen, toggleSidebar,
     rightPanelOpen, toggleRightPanel,
     bottomPanelOpen, toggleBottomPanel,
     isSimulationRunning, setSimulationRunning,
-    setShowExportModal, setShowImportModal, setShowAboutModal,
+    setShowExportModal, setShowImportModal, setShowAboutModal, setShowTemplateModal,
     setBottomTab,
   } = useUIStore();
 
@@ -35,27 +36,37 @@ const Toolbar: React.FC = () => {
 
       {/* Edit actions */}
       <button className="toolbar-btn" onClick={undo} disabled={past.length === 0} title="Undo (Ctrl+Z)">
-        <Undo2 size={15} /> <span>Undo</span>
+        <Undo2 size={15} />
+        <span className="toolbar-label">Undo</span>
       </button>
       <button className="toolbar-btn" onClick={redo} disabled={future.length === 0} title="Redo (Ctrl+Y)">
-        <Redo2 size={15} /> <span>Redo</span>
+        <Redo2 size={15} />
+        <span className="toolbar-label">Redo</span>
       </button>
 
       <div className="toolbar-divider" />
 
       {/* File ops */}
       <button className="toolbar-btn" onClick={() => setShowImportModal(true)} title="Import circuit">
-        <Upload size={15} /> <span>Import</span>
+        <Upload size={15} />
+        <span className="toolbar-label">Import</span>
       </button>
       <button className="toolbar-btn" onClick={() => { saveToLocalStorage(); setShowExportModal(true); }} title="Export circuit">
-        <Download size={15} /> <span>Export</span>
+        <Download size={15} />
+        <span className="toolbar-label">Export</span>
       </button>
 
       <div className="toolbar-divider" />
 
-      {/* Panels */}
+      {/* Panels & Templates */}
+      <button className="toolbar-btn" onClick={() => setShowTemplateModal(true)} title="Circuit Templates">
+        <Layout size={15} />
+        <span className="toolbar-label">Templates</span>
+      </button>
+
       <button className="toolbar-btn" onClick={() => setBottomTab('truthTable')} title="Truth table">
-        <LayoutTemplate size={15} /> <span>Truth Table</span>
+        <LayoutTemplate size={15} />
+        <span className="toolbar-label">Truth Table</span>
       </button>
 
       <button className="toolbar-btn" onClick={toggleRightPanel} title="Toggle properties panel">
@@ -76,8 +87,23 @@ const Toolbar: React.FC = () => {
         <Info size={15} />
       </button>
 
+      {/* Circuit stats */}
+      <div className="toolbar-stats">
+        <span className="toolbar-stat" title="Nodes on canvas">
+          <Zap size={11} />
+          {nodes.length}
+        </span>
+        <span className="toolbar-stat" title="Wires on canvas">
+          ⚡ {edges.length}
+        </span>
+      </div>
+
       {/* Simulation controls */}
       <div className="toolbar-sim-controls">
+        <div className={`sim-status ${isSimulationRunning ? 'running' : 'stopped'}`}>
+          <span className="sim-status-dot" />
+          {isSimulationRunning ? 'LIVE' : 'PAUSED'}
+        </div>
         <button
           className={`sim-btn ${isSimulationRunning ? 'pause' : 'play'}`}
           onClick={() => setSimulationRunning(!isSimulationRunning)}

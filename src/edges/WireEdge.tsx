@@ -26,16 +26,23 @@ const WireEdge: React.FC<EdgeProps<WireEdgeType>> = ({
   });
 
   const isHigh = data?.signalValue ?? false;
-  const strokeColor = isHigh ? '#22c55e' : '#4b5563';
-  const glowFilter = isHigh ? 'url(#wire-glow-green)' : undefined;
-  const strokeWidth = selected ? 3 : 2.5;
+  const strokeColor = selected ? '#ef4444' : isHigh ? '#facc15' : '#333';
+  const glowFilter = selected ? 'url(#wire-glow-red)' : isHigh ? 'url(#wire-glow-yellow)' : undefined;
+  const strokeWidth = selected ? 3.5 : isHigh ? 2.5 : 2;
 
   return (
     <>
       {/* Glow filter definition */}
       <svg width="0" height="0" style={{ position: 'absolute' }}>
         <defs>
-          <filter id="wire-glow-green" x="-50%" y="-50%" width="200%" height="200%">
+          <filter id="wire-glow-yellow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="3" result="blur" />
+            <feMerge>
+              <feMergeNode in="blur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+          <filter id="wire-glow-red" x="-50%" y="-50%" width="200%" height="200%">
             <feGaussianBlur stdDeviation="3" result="blur" />
             <feMerge>
               <feMergeNode in="blur" />
@@ -52,7 +59,7 @@ const WireEdge: React.FC<EdgeProps<WireEdgeType>> = ({
           stroke: strokeColor,
           strokeWidth,
           filter: glowFilter,
-          transition: 'stroke 0.2s ease',
+          transition: 'stroke 0.2s ease, stroke-width 0.2s ease',
         }}
         className={isHigh ? 'wire-animated' : ''}
       />

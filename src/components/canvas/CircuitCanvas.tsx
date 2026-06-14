@@ -77,6 +77,7 @@ const CircuitCanvas: React.FC = () => {
       onNodesChange={onNodesChange}
       onEdgesChange={onEdgesChange}
       onConnect={onConnect}
+      connectOnClick
       nodeTypes={nodeTypes}
       edgeTypes={edgeTypes}
       defaultEdgeOptions={{ type: 'wire' }}
@@ -91,8 +92,8 @@ const CircuitCanvas: React.FC = () => {
       snapGrid={[15, 15]}
       minZoom={0.1}
       maxZoom={4}
-      deleteKeyCode="Delete"
-      multiSelectionKeyCode="Shift"
+      deleteKeyCode={['Backspace', 'Delete']}
+      multiSelectionKeyCode={['Shift', 'Control', 'Meta']}
       panOnDrag={[1, 2]}
       selectionOnDrag
       proOptions={{ hideAttribution: true }}
@@ -101,14 +102,14 @@ const CircuitCanvas: React.FC = () => {
         variant={BackgroundVariant.Dots}
         gap={15}
         size={1}
-        color="#1e1e32"
+        color="#333333" /* dark dots so the canvas is mostly black but readable */
       />
       <Controls
         showInteractive={false}
         position="bottom-left"
       />
       <MiniMap
-        nodeColor="#3b82f6"
+        nodeColor="#facc15"
         maskColor="rgba(8, 8, 12, 0.85)"
         position="bottom-right"
         pannable

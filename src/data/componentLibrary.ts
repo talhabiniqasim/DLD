@@ -3,9 +3,15 @@ import type { ComponentDefinition, ComponentCategory } from '../types/circuit';
 // ─── Helper: create evaluation function ────────────────────────────────────────
 
 function evalFn(
-  fn: (inputs: Map<string, boolean>) => Map<string, boolean>
-): (inputs: Map<string, boolean>) => Map<string, boolean> {
-  return fn;
+  fn: (inputs: Map<string, boolean>, state?: any) => Map<string, boolean> | { outputs: Map<string, boolean>; nextState?: any }
+): (inputs: Map<string, boolean>, state?: any) => { outputs: Map<string, boolean>; nextState?: any } {
+  return (inputs, state) => {
+    const res = fn(inputs, state);
+    if (res instanceof Map) {
+      return { outputs: res, nextState: state };
+    }
+    return res;
+  };
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -283,6 +289,224 @@ const xnorGate: ComponentDefinition = {
 };
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// COMBINATIONAL COMPONENTS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const halfAdder: ComponentDefinition = {
+  type: 'half-adder',
+  category: 'combinational',
+  label: 'Half Adder',
+  description: 'Adds two 1-bit binary numbers. Outputs Sum and Carry.',
+  formula: 'Sum = A ⊕ B, Carry = A · B',
+  inputs: [
+    { id: 'A', label: 'A', position: 'left' },
+    { id: 'B', label: 'B', position: 'left' },
+  ],
+  outputs: [
+    { id: 'SUM', label: 'S', position: 'right' },
+    { id: 'CARRY', label: 'C', position: 'right' },
+  ],
+  truthTable: [],
+  evaluate: evalFn((inputs) => {
+    const a = inputs.get('A') ?? false;
+    const b = inputs.get('B') ?? false;
+    return new Map([
+      ['SUM', a !== b],
+      ['CARRY', a && b],
+    ]);
+  }),
+  defaultProps: {},
+  color: '#3b82f6',
+};
+
+const fullAdder: ComponentDefinition = {
+  type: 'full-adder',
+  category: 'combinational',
+  label: 'Full Adder',
+  description: 'Adds three 1-bit binary numbers (A, B, and Carry-In). Outputs Sum and Carry-Out.',
+  formula: 'Sum = A ⊕ B ⊕ Cin',
+  inputs: [
+    { id: 'A', label: 'A', position: 'left' },
+    { id: 'B', label: 'B', position: 'left' },
+    { id: 'CIN', label: 'Cin', position: 'left' },
+  ],
+  outputs: [
+    { id: 'SUM', label: 'S', position: 'right' },
+    { id: 'COUT', label: 'Cout', position: 'right' },
+  ],
+  truthTable: [],
+  evaluate: evalFn((inputs) => {
+    const a = inputs.get('A') ?? false;
+    const b = inputs.get('B') ?? false;
+    const cin = inputs.get('CIN') ?? false;
+    const sum = (a !== b) !== cin;
+    const cout = (a && b) || (cin && (a !== b));
+    return new Map([
+      ['SUM', sum],
+      ['COUT', cout],
+    ]);
+  }),
+  defaultProps: {},
+  color: '#8b5cf6',
+};
+
+const mux2to1: ComponentDefinition = {
+  type: 'mux-2to1',
+  category: 'combinational',
+  label: '2-to-1 MUX',
+  description: 'Multiplexer that selects between two inputs (D0, D1) based on a Select (S) signal.',
+  formula: 'Y = S ? D1 : D0',
+  inputs: [
+    { id: 'D0', label: 'D0', position: 'left' },
+    { id: 'D1', label: 'D1', position: 'left' },
+    { id: 'S', label: 'S', position: 'left' },
+  ],
+  outputs: [
+    { id: 'Y', label: 'Y', position: 'right' },
+  ],
+  truthTable: [],
+  evaluate: evalFn((inputs) => {
+    const d0 = inputs.get('D0') ?? false;
+    const d1 = inputs.get('D1') ?? false;
+    const s = inputs.get('S') ?? false;
+    return new Map([['Y', s ? d1 : d0]]);
+  }),
+  defaultProps: {},
+  color: '#10b981',
+};
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// SEQUENTIAL COMPONENTS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const srLatch: ComponentDefinition = {
+  type: 'sr-latch',
+  category: 'sequential',
+  label: 'SR Latch',
+  description: 'Set-Reset Latch. Stores a bit. Set (S) makes output HIGH, Reset (R) makes output LOW.',
+  formula: 'Q = S + (R\' · Q)',
+  inputs: [
+    { id: 'S', label: 'S', position: 'left' },
+    { id: 'R', label: 'R', position: 'left' },
+  ],
+  outputs: [
+    { id: 'Q', label: 'Q', position: 'right' },
+    { id: 'Q_NOT', label: 'Q\'', position: 'right' },
+  ],
+  truthTable: [],
+  evaluate: evalFn((inputs, state) => {
+    const s = inputs.get('S') ?? false;
+    const r = inputs.get('R') ?? false;
+    let q = state?.q ?? false;
+
+    if (s && !r) q = true;
+    else if (!s && r) q = false;
+
+    return {
+      outputs: new Map([
+        ['Q', q],
+        ['Q_NOT', !q]
+      ]),
+      nextState: { q }
+    };
+  }),
+  defaultProps: { q: false },
+  color: '#eab308',
+};
+
+const dFlipFlop: ComponentDefinition = {
+  type: 'd-flipflop',
+  category: 'sequential',
+  label: 'D Flip-Flop',
+  description: 'Data Flip-Flop. Stores the value of Data (D) on the rising edge of the Clock (CLK).',
+  formula: 'Q(next) = D',
+  inputs: [
+    { id: 'D', label: 'D', position: 'left' },
+    { id: 'CLK', label: 'CLK', position: 'left' },
+    { id: 'RST', label: 'RST', position: 'bottom' },
+  ],
+  outputs: [
+    { id: 'Q', label: 'Q', position: 'right' },
+    { id: 'Q_NOT', label: 'Q\'', position: 'right' },
+  ],
+  truthTable: [],
+  evaluate: evalFn((inputs, state) => {
+    const d = inputs.get('D') ?? false;
+    const clk = inputs.get('CLK') ?? false;
+    const lastClk = state?.lastClk ?? false;
+    let q = state?.q ?? false;
+
+    const rst = inputs.get('RST') ?? false;
+
+    // Asynchronous Reset
+    if (rst) {
+      q = false;
+    } 
+    // Rising edge detection
+    else if (clk && !lastClk) {
+      q = d;
+    }
+
+    return {
+      outputs: new Map([
+        ['Q', q],
+        ['Q_NOT', !q]
+      ]),
+      nextState: { q, lastClk: clk }
+    };
+  }),
+  defaultProps: { q: false, lastClk: false },
+  color: '#eab308',
+};
+
+const tFlipFlop: ComponentDefinition = {
+  type: 't-flipflop',
+  category: 'sequential',
+  label: 'T Flip-Flop',
+  description: 'Toggle Flip-Flop. Toggles its stored value on the rising edge of the Clock (CLK) if T is HIGH.',
+  formula: 'Q(next) = T ? Q\' : Q',
+  inputs: [
+    { id: 'T', label: 'T', position: 'left' },
+    { id: 'CLK', label: 'CLK', position: 'left' },
+    { id: 'RST', label: 'RST', position: 'bottom' },
+  ],
+  outputs: [
+    { id: 'Q', label: 'Q', position: 'right' },
+    { id: 'Q_NOT', label: 'Q\'', position: 'right' },
+  ],
+  truthTable: [],
+  evaluate: evalFn((inputs, state) => {
+    const t = inputs.get('T') ?? false;
+    const clk = inputs.get('CLK') ?? false;
+    const lastClk = state?.lastClk ?? false;
+    let q = state?.q ?? false;
+
+    const rst = inputs.get('RST') ?? false;
+
+    // Asynchronous Reset
+    if (rst) {
+      q = false;
+    }
+    // Rising edge detection
+    else if (clk && !lastClk) {
+      if (t) {
+        q = !q;
+      }
+    }
+
+    return {
+      outputs: new Map([
+        ['Q', q],
+        ['Q_NOT', !q]
+      ]),
+      nextState: { q, lastClk: clk }
+    };
+  }),
+  defaultProps: { q: false, lastClk: false },
+  color: '#eab308',
+};
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // OUTPUT COMPONENTS
 // ═══════════════════════════════════════════════════════════════════════════════
 
@@ -355,6 +579,23 @@ const binaryDisplay: ComponentDefinition = {
   color: '#8b5cf6',
 };
 
+const fanOutput: ComponentDefinition = {
+  type: 'fan-output',
+  category: 'outputs',
+  label: 'Fan',
+  description: 'A DC motor fan. Spins when the input is HIGH (1) and stops when LOW (0). Visual feedback for power-driving outputs.',
+  formula: 'Spin = Input',
+  inputs: [{ id: 'IN', label: 'IN', position: 'left' }],
+  outputs: [],
+  truthTable: [
+    { inputs: { IN: 0 }, outputs: {} },
+    { inputs: { IN: 1 }, outputs: {} },
+  ],
+  evaluate: evalFn((_inputs) => new Map()),
+  defaultProps: {},
+  color: '#60a5fa',
+};
+
 // ═══════════════════════════════════════════════════════════════════════════════
 // COMPONENT REGISTRY
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -374,11 +615,20 @@ export const componentLibrary: Record<string, ComponentDefinition> = {
   'nor-gate': norGate,
   'xor-gate': xorGate,
   'xnor-gate': xnorGate,
+  // Combinational
+  'half-adder': halfAdder,
+  'full-adder': fullAdder,
+  'mux-2to1': mux2to1,
+  // Sequential
+  'sr-latch': srLatch,
+  'd-flipflop': dFlipFlop,
+  't-flipflop': tFlipFlop,
   // Outputs
   'led-output': ledOutput,
   'seven-segment': sevenSegment,
   'logic-probe': logicProbe,
   'binary-display': binaryDisplay,
+  'fan-output': fanOutput,
 };
 
 // ─── Category metadata ─────────────────────────────────────────────────────────

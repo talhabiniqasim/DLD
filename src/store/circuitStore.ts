@@ -45,6 +45,7 @@ interface CircuitStore {
 
   // Actions — Simulation
   runSimulation: () => void;
+  tickSimulation: () => void;
 
   // Actions — History
   pushHistory: () => void;
@@ -182,6 +183,34 @@ export const useCircuitStore = create<CircuitStore>((set, get) => ({
     setTimeout(() => get().runSimulation(), 0);
   },
 
+  // ── Tick Simulation ────────────────────────────────────────────
+  tickSimulation: () => {
+    const { nodes } = get();
+    let changed = false;
+    
+    // Toggle all clocks
+    const updatedNodes = nodes.map(node => {
+      if (node.data.componentType === 'clock-source') {
+        changed = true;
+        const currentState = node.data.properties?.state as boolean ?? false;
+        return {
+          ...node,
+          data: {
+            ...node.data,
+            properties: { ...node.data.properties, state: !currentState }
+          }
+        };
+      }
+      return node;
+    });
+
+    if (changed) {
+      set({ nodes: updatedNodes as AppNode[] });
+    }
+    
+    get().runSimulation();
+  },
+
   // ── Run Simulation ─────────────────────────────────────────────
   runSimulation: () => {
     const { nodes, edges } = get();
@@ -199,9 +228,16 @@ export const useCircuitStore = create<CircuitStore>((set, get) => ({
           }
         }
       }
+      
+      const propertyUpdates = result.nodeUpdates.get(node.id);
+      let properties = node.data.properties;
+      if (propertyUpdates) {
+        properties = propertyUpdates;
+      }
+
       return {
         ...node,
-        data: { ...node.data, signalValues: newSignalValues },
+        data: { ...node.data, signalValues: newSignalValues, properties },
       };
     });
 

@@ -6,6 +6,7 @@ import { getComponentDefinition } from '../data/componentLibrary';
 interface EvaluationResult {
   signals: Map<string, boolean>; // "nodeId:pinId" → value
   errors: string[];
+  nodeUpdates: Map<string, Record<string, unknown>>;
 }
 
 // ─── Build adjacency from edges ────────────────────────────────────────────────
@@ -102,8 +103,9 @@ export function evaluateCircuit(
 ): EvaluationResult {
   const signals = new Map<string, boolean>();
   const errors: string[] = [];
+  const nodeUpdates = new Map<string, Record<string, unknown>>();
 
-  if (nodes.length === 0) return { signals, errors };
+  if (nodes.length === 0) return { signals, errors, nodeUpdates };
 
   // Build graph
   const { adjacency, inDegree, edgeMap } = buildGraph(nodes, edges);
@@ -111,8 +113,12 @@ export function evaluateCircuit(
   // Topological sort
   const { sorted, hasCycle } = topologicalSort(adjacency, inDegree);
 
-  if (hasCycle) {
-    errors.push('Circuit contains a feedback loop. Sequential elements may not evaluate correctly.');
+  // If there are cycles (e.g. flip-flops), append the remaining nodes to be evaluated
+  if (sorted.length < nodes.length) {
+    const sortedSet = new Set(sorted);
+    for (const node of nodes) {
+      if (!sortedSet.has(node.id)) sorted.push(node.id);
+    }
   }
 
   // Create a node lookup
@@ -157,8 +163,19 @@ export function evaluateCircuit(
 
     // Evaluate the component logic
     if (def.category !== 'outputs') {
-      const outputValues = def.evaluate(inputValues);
-      for (const [pinId, value] of outputValues) {
+      const evaluation = def.evaluate(inputValues, node.data.properties);
+      
+      let outputs: Map<string, boolean>;
+      if (evaluation instanceof Map) {
+        outputs = evaluation;
+      } else {
+        outputs = evaluation.outputs;
+        if (evaluation.nextState) {
+          nodeUpdates.set(nodeId, { ...node.data.properties, ...evaluation.nextState });
+        }
+      }
+
+      for (const [pinId, value] of outputs) {
         signals.set(`${nodeId}:${pinId}`, value);
       }
     }
@@ -170,7 +187,7 @@ export function evaluateCircuit(
     }
   }
 
-  return { signals, errors };
+  return { signals, errors, nodeUpdates };
 }
 
 // ─── Detect feedback loops ─────────────────────────────────────────────────────

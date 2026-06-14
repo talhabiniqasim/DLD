@@ -40,7 +40,10 @@ export interface ComponentDefinition {
   inputs: PinDefinition[];
   outputs: PinDefinition[];
   truthTable: TruthTableRow[];
-  evaluate: (inputs: Map<string, boolean>) => Map<string, boolean>;
+  evaluate: (
+    inputs: Map<string, boolean>,
+    state?: any
+  ) => Map<string, boolean> | { outputs: Map<string, boolean>; nextState?: any };
   defaultProps: Record<string, unknown>;
   color: string;
 }
