@@ -80,7 +80,6 @@ npm run build
 
 The output will be in the `dist/` folder, ready for static hosting.
 
----
 
 ## 🛠️ Tech Stack
 
@@ -96,9 +95,8 @@ The output will be in the `dist/` folder, ready for static hosting.
 | Charts | Recharts |
 | Export | html-to-image |
 
----
 
-## 📂 Project Structure
+## Project Structure
 
 ```
 src/
@@ -126,11 +124,11 @@ src/
 | `Shift+Drag` | Multi-select |
 
 
-## 👤 Contact
+## Contact
 
 **Talha Bin Qasim**
 
-- 💼 LinkedIn: [linkedin.com/in/talhabinqasim](https://www.linkedin.com/in/talhabinqasim)
+- LinkedIn: [linkedin.com/in/talhabinqasim](https://www.linkedin.com/in/talhabinqasim)
 
 
 <div align="center">
