@@ -12,8 +12,6 @@ export interface CircuitTemplate {
 
 // ─── Helper to build nodes/edges quickly ───────────────────────────────────────
 
-let _nid = 0;
-function nid(prefix: string) { return `tpl-${prefix}-${_nid++}`; }
 
 function makeNode(
   id: string, componentType: string, label: string, x: number, y: number,

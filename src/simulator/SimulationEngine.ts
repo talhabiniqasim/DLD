@@ -111,7 +111,7 @@ export function evaluateCircuit(
   const { adjacency, inDegree, edgeMap } = buildGraph(nodes, edges);
 
   // Topological sort
-  const { sorted, hasCycle } = topologicalSort(adjacency, inDegree);
+  const { sorted } = topologicalSort(adjacency, inDegree);
 
   // If there are cycles (e.g. flip-flops), append the remaining nodes to be evaluated
   if (sorted.length < nodes.length) {
